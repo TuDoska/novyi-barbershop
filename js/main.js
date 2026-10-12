@@ -156,7 +156,7 @@ function openBook(hint) {
   $('#book-hint').textContent = hint ? `Ви обрали: ${hint}. Позначте її у списку нижче й оберіть зручний час.` : 'Позначте послугу, оберіть майстра та вільний час — і запис одразу потрапить до барбершопу.';
   book.hidden = false;
   document.body.classList.add('no-scroll');
-  requestAnimationFrame(() => book.classList.add('is-open'));
+  setTimeout(() => book.classList.add('is-open'), 20);
   $('.book__close', book).focus();
 }
 
@@ -180,5 +180,5 @@ document.addEventListener('click', (e) => {
 addEventListener('keydown', (e) => { if (e.key === 'Escape' && !book.hidden) closeBook(); });
 if (location.hash === '#book') openBook();
 
-requestAnimationFrame(() => document.body.classList.add('is-loaded'));
+setTimeout(() => document.body.classList.add('is-loaded'), 30);
 $('#year').textContent = new Date().getFullYear();
