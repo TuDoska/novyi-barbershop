@@ -57,7 +57,7 @@ function renderPrice() {
         <span class="price__dots" aria-hidden="true"></span>
         <span class="price__time">${time}</span>
         <span class="price__val">${from ? '<small>від</small> ' : ''}${uah(price)}</span>
-        <a class="price__book" href="${BOOK_URL}" target="_blank" rel="noopener" aria-label="Записатися: ${s.name}">→</a>
+        <a class="price__book" href="#book" data-book data-hint="${s.name} · ${tier === 'top' ? 'Top barber' : 'Prime barber'}" aria-label="Записатися: ${s.name}">→</a>
       </li>`;
   }).join('');
 }
@@ -113,7 +113,7 @@ $('#masters-grid').innerHTML = MASTERS.map((m, i) => `
       </div>
       <ul>${m.skills.map((s) => `<li>${s}</li>`).join('')}</ul>
       <div class="master__actions">
-        <a class="link-arrow" href="${BOOK_URL}" target="_blank" rel="noopener">Записатися <span aria-hidden="true">→</span></a>
+        <a class="link-arrow" href="#book" data-book data-hint="Майстер: ${m.name} (${m.tier})">Записатися <span aria-hidden="true">→</span></a>
         <button class="master__prices" data-show-tier="${m.tierId}">Ціни ${m.tier.split(' ')[0]}</button>
       </div>
     </div>
@@ -141,6 +141,44 @@ $$('.section__head, .about__text, .about__art, .master, .steps li, .quote, .cont
 const sticky = $('.sticky-book');
 const heroObs = new IntersectionObserver(([e]) => sticky.classList.toggle('is-shown', !e.isIntersecting), { threshold: 0 });
 heroObs.observe($('.hero'));
+
+/* ---------- Вікно запису ---------- */
+const book = $('#book');
+const frame = $('#book-iframe');
+let lastFocus = null;
+
+function openBook(hint) {
+  lastFocus = document.activeElement;
+  if (!frame.src) {
+    frame.addEventListener('load', () => book.classList.add('is-ready'), { once: true });
+    frame.src = BOOK_URL;
+  }
+  $('#book-hint').textContent = hint ? `Ви обрали: ${hint}. Позначте її у списку нижче й оберіть зручний час.` : 'Позначте послугу, оберіть майстра та вільний час — і запис одразу потрапить до барбершопу.';
+  book.hidden = false;
+  document.body.classList.add('no-scroll');
+  requestAnimationFrame(() => book.classList.add('is-open'));
+  $('.book__close', book).focus();
+}
+
+function closeBook() {
+  book.classList.remove('is-open');
+  document.body.classList.remove('no-scroll');
+  setTimeout(() => { book.hidden = true; }, 500);
+  lastFocus?.focus();
+}
+
+document.addEventListener('click', (e) => {
+  const trigger = e.target.closest('[data-book]');
+  if (trigger) {
+    e.preventDefault();
+    header.classList.remove('is-open');
+    openBook(trigger.dataset.hint);
+    return;
+  }
+  if (e.target.closest('[data-close]')) closeBook();
+});
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && !book.hidden) closeBook(); });
+if (location.hash === '#book') openBook();
 
 requestAnimationFrame(() => document.body.classList.add('is-loaded'));
 $('#year').textContent = new Date().getFullYear();

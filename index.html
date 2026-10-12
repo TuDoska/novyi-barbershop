@@ -36,7 +36,7 @@
       <a href="#ritual">Ритуал</a>
       <a href="#contact">Контакти</a>
     </nav>
-    <a class="btn btn--line header__cta" href="https://booking.easyweek.com.ua/r-evvvo-barbershop" target="_blank" rel="noopener">Записатися</a>
+    <a class="btn btn--line header__cta" href="#book" data-book>Записатися</a>
     <button class="burger" aria-label="Меню" aria-expanded="false"><span></span><span></span></button>
   </header>
 
@@ -51,7 +51,7 @@
       </h1>
       <p class="hero__lead">Простір для джентльменів будь-якого віку.<br>Тиша, точність і бездоганна форма — без поспіху.</p>
       <div class="hero__actions">
-        <a class="btn btn--gold" href="https://booking.easyweek.com.ua/r-evvvo-barbershop" target="_blank" rel="noopener">Обрати час візиту</a>
+        <a class="btn btn--gold" href="#book" data-book>Обрати час візиту</a>
         <a class="link-arrow" href="#services">Прайс <span aria-hidden="true">→</span></a>
       </div>
       <div class="hero__meta">
@@ -160,7 +160,7 @@
           </dd></div>
         </dl>
         <div class="hero__actions">
-          <a class="btn btn--gold" href="https://booking.easyweek.com.ua/r-evvvo-barbershop" target="_blank" rel="noopener">Записатися онлайн</a>
+          <a class="btn btn--gold" href="#book" data-book>Записатися онлайн</a>
           <a class="btn btn--line" href="tel:+380739012596">Подзвонити</a>
         </div>
       </div>
@@ -178,7 +178,27 @@
     <a href="#top">Нагору ↑</a>
   </footer>
 
-  <a class="sticky-book" href="https://booking.easyweek.com.ua/r-evvvo-barbershop" target="_blank" rel="noopener">Записатися</a>
+
+  <div class="book" id="book" role="dialog" aria-modal="true" aria-labelledby="book-title" hidden>
+    <div class="book__backdrop" data-close></div>
+    <div class="book__panel">
+      <div class="book__head">
+        <div>
+          <p class="eyebrow">Онлайн-запис</p>
+          <h2 class="book__title" id="book-title">Оберіть <em>майстра, послугу й час</em></h2>
+          <p class="book__hint" id="book-hint"></p>
+        </div>
+        <button class="book__close" data-close aria-label="Закрити">×</button>
+      </div>
+      <div class="book__frame">
+        <div class="book__loader" aria-hidden="true"><span></span></div>
+        <iframe id="book-iframe" title="Онлайн-запис NOVYI_ BARBERSHOP"></iframe>
+      </div>
+      <p class="book__foot">Запис надходить напряму в барбершоп · Питання? <a href="tel:+380739012596">+380 73 901 25 96</a></p>
+    </div>
+  </div>
+
+  <a class="sticky-book" href="#book" data-book>Записатися</a>
 
   <script src="js/data.js"></script>
   <script src="js/main.js"></script>

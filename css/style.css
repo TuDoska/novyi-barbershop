@@ -385,3 +385,53 @@ em { font-style: italic; color: var(--gold-2); }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reveal, .hero__title .line > span, .hero__lead, .hero__actions, .hero__meta, .hero__eyebrow { opacity: 1; transform: none; }
 }
+
+/* ---------- Вікно запису ---------- */
+.book { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 24px; }
+.book[hidden] { display: none; }
+.book__backdrop {
+  position: absolute; inset: 0; background: rgba(5, 5, 4, .78); backdrop-filter: blur(10px);
+  opacity: 0; transition: opacity .5s var(--ease);
+}
+.book__panel {
+  position: relative; width: min(760px, 100%); height: min(860px, calc(100svh - 48px));
+  display: flex; flex-direction: column; background: var(--bg-2);
+  border: 1px solid rgba(198, 169, 107, .35);
+  box-shadow: 0 40px 120px rgba(0, 0, 0, .7);
+  opacity: 0; transform: translateY(30px) scale(.98);
+  transition: opacity .6s var(--ease), transform .7s var(--ease);
+}
+.book__panel::before, .book__panel::after {
+  content: ''; position: absolute; width: 22px; height: 22px; border-color: var(--gold); border-style: solid; pointer-events: none;
+}
+.book__panel::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+.book__panel::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+.book.is-open .book__backdrop { opacity: 1; }
+.book.is-open .book__panel { opacity: 1; transform: none; }
+.book__head { display: flex; justify-content: space-between; gap: 20px; padding: 28px 32px 22px; border-bottom: 1px solid var(--line); }
+.book__head .eyebrow { margin-bottom: 12px; }
+.book__title { margin: 0; font: 300 clamp(26px, 3.6vw, 36px)/1.1 var(--serif); }
+.book__hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); max-width: 520px; }
+.book__close {
+  flex: none; width: 46px; height: 46px; border: 1px solid var(--line); border-radius: 50%;
+  font: 300 26px/1 var(--serif); color: var(--gold-2); transition: all .4s var(--ease);
+}
+.book__close:hover { background: var(--gold); color: var(--bg); border-color: var(--gold); transform: rotate(90deg); }
+.book__frame { position: relative; flex: 1; background: #fff; overflow: hidden; }
+.book__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity .6s; }
+.book.is-ready .book__frame iframe { opacity: 1; }
+.book__loader { position: absolute; inset: 0; display: grid; place-items: center; background: var(--bg-2); transition: opacity .6s; }
+.book.is-ready .book__loader { opacity: 0; pointer-events: none; }
+.book__loader span {
+  width: 42px; height: 42px; border: 1px solid rgba(198, 169, 107, .25); border-top-color: var(--gold);
+  border-radius: 50%; animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg) } }
+.book__foot { margin: 0; padding: 14px 32px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); }
+.book__foot a { color: var(--gold-2); }
+@media (max-width: 600px) {
+  .book { padding: 0; }
+  .book__panel { height: 100svh; border: 0; }
+  .book__head { padding: 20px 18px 16px; }
+  .book__foot { padding: 12px 18px; }
+}
