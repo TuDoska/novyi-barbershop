@@ -1,5 +1,6 @@
 // Початкові дані: майстри, послуги та графік з офіційної сторінки барбершопу
 const { db } = require('./db');
+const { defaultSchedule, DEFAULT_BUFFER } = require('./booking');
 
 const IMG = 'https://imprx.easyweek.io/_/rs:fill:800:1000:1:0/dpr:1/';
 
@@ -33,7 +34,7 @@ const SERVICES = [
   S('care', 'Воскова депіляція', p(100, 20), p(150, 20)),
 ];
 
-const DEFAULT_HOURS = { open: 600, close: 1200, days: [0, 1, 2, 3, 4, 5, 6], step: 30 };
+const DEFAULT_HOURS = { step: 30, closedDates: [] };
 
 async function seed() {
   if (!(await db.masters.count())) {
@@ -43,8 +44,19 @@ async function seed() {
     let order = 1;
     for (const s of SERVICES) await db.services.insert({ active: true, order: order++, ...s });
   }
-  if (!(await db.settings.findOne({ _id: 'hours' }))) {
-    await db.settings.insert({ _id: 'hours', ...DEFAULT_HOURS, closedDates: [] });
+  const salon = await db.settings.findOne({ _id: 'hours' });
+  if (!salon) await db.settings.insert({ _id: 'hours', ...DEFAULT_HOURS });
+
+  // Міграція: майстри без власного графіка отримують графік салону (або 10:00–20:00 щодня) і перерву 10 хв
+  const base = salon?.days
+    ? Object.fromEntries([0, 1, 2, 3, 4, 5, 6].map((d) => [d, { on: salon.days.includes(d), open: salon.open, close: salon.close }]))
+    : defaultSchedule();
+  for (const m of await db.masters.find({})) {
+    const set = {};
+    if (!m.schedule) set.schedule = base;
+    if (m.buffer === undefined) set.buffer = DEFAULT_BUFFER;
+    if (!m.closedDates) set.closedDates = [];
+    if (Object.keys(set).length) await db.masters.update({ _id: m._id }, set);
   }
   if (!(await db.counters.findOne({ _id: 'booking' }))) await db.counters.insert({ _id: 'booking', seq: 1000 });
 }

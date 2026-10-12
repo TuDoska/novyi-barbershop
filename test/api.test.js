@@ -62,7 +62,8 @@ function client(base) {
     assert.strictEqual(meta.masters.length, 3);
     assert.strictEqual(meta.services.length, 14);
     assert.strictEqual(perm.top, null);
-    assert.ok(meta.days.length === 31 && meta.days.every((d) => d.open));
+    assert.ok(meta.masters.every((m) => m.days.length === 31 && m.days.every((d) => d.open)));
+    assert.strictEqual(meta.week.length, 7);
   });
 
   let bookingId;
@@ -75,7 +76,8 @@ function client(base) {
     assert.strictEqual(r.body.booking.status, 'pending');
     bookingId = r.body.booking.id;
     const slots = (await guest.get(`/api/slots?master=veronika&service=${haircut.id}&date=${tomorrow}`)).body.slots;
-    assert.ok(!slots.includes(600) && !slots.includes(630) && slots.includes(660));
+    assert.ok(!slots.includes(600) && !slots.includes(630));
+    assert.ok(!slots.includes(660) && slots.includes(690), 'перерва 10 хв після запису');
     assert.strictEqual((await petro.post('/api/bookings', { ...body, start: 630 })).body.error, 'slot_taken');
     assert.strictEqual((await petro.post('/api/bookings', { ...body, masterId: 'zoriana' })).body.booking.price, 600);
   });
@@ -162,15 +164,50 @@ function client(base) {
     const s = await admin.post('/api/admin/services', { name: 'Тонування бороди', cat: 'beard', top: { price: 300, duration: 30 }, prime: null });
     assert.strictEqual(s.status, 201);
     assert.strictEqual((await admin.post('/api/admin/services', { name: 'X', cat: 'beard' })).status, 400);
-    const h = await admin.put('/api/admin/hours', { open: 540, close: 1080, step: 30, days: [1, 2, 3, 4, 5, 6], closedDates: [tomorrow] });
-    assert.strictEqual(h.status, 200);
+    // Вихідний день усього салону
+    assert.strictEqual((await admin.put('/api/admin/salon', { step: 30, closedDates: [tomorrow] })).status, 200);
     assert.deepStrictEqual((await guest.get(`/api/slots?master=zoriana&service=${haircut.id}&date=${tomorrow}`)).body.slots, []);
-    await admin.put('/api/admin/hours', { open: 600, close: 1200, step: 30, days: [0, 1, 2, 3, 4, 5, 6], closedDates: [] });
+    await admin.put('/api/admin/salon', { step: 30, closedDates: [] });
     const w = await admin.post('/api/admin/bookings', { masterId: 'solomiia', serviceId: haircut.id, date: tomorrow, start: 900, clientName: 'Андрій', clientPhone: '0631231231' });
     assert.strictEqual(w.body.booking.status, 'confirmed');
     const a = client(base);
     await a.post('/api/auth/register', { name: 'Андрій', phone: '0631231231', password: 'secret123', agree: true });
     assert.strictEqual((await a.get('/api/my')).body.upcoming.length, 1, 'запис привʼязується після реєстрації');
+  });
+
+  await test('графік майстра: свої дні й години, перерва, права, попередження', async () => {
+    const vera = client(base);
+    await vera.post('/api/auth/login', { phone: '0991234567', password: 'master123' });
+    const cur = (await vera.get('/api/admin/schedule/veronika')).body.schedule;
+    assert.strictEqual(cur.buffer, 10);
+    assert.strictEqual((await vera.get('/api/admin/schedule/zoriana')).status, 403, 'чужий графік не можна');
+    assert.strictEqual((await vera.put('/api/admin/schedule/zoriana', { week: cur.week, buffer: 0 })).status, 403);
+    assert.strictEqual((await ivan.get('/api/admin/schedule/veronika')).status, 403);
+
+    await admin.post('/api/admin/bookings', { masterId: 'veronika', serviceId: haircut.id, date: tomorrow, start: 600, clientName: 'Олег', clientPhone: '0631110000' });
+    // Вероніка: завтра працює 12:00–16:00, перерва 30 хв
+    const wd = new Date(tomorrow + 'T00:00:00Z').getUTCDay();
+    const week = { ...cur.week, [wd]: { on: true, open: 720, close: 960 } };
+    const r = await vera.put('/api/admin/schedule/veronika', { week, buffer: 30, closedDates: [] });
+    assert.strictEqual(r.status, 200, JSON.stringify(r.body));
+    assert.ok(r.body.conflicts.length >= 1, 'є записи до 12:00, які тепер поза графіком');
+    const slots = (await guest.get(`/api/slots?master=veronika&service=${haircut.id}&date=${tomorrow}`)).body.slots;
+    assert.strictEqual(slots[0] >= 720, true);
+    assert.ok(slots.every((t) => t + 60 <= 960));
+    assert.strictEqual((await vera.put('/api/admin/schedule/veronika', { week: { ...week, [wd]: { on: true, open: 900, close: 800 } }, buffer: 30 })).body.error, 'bad_hours');
+    assert.strictEqual((await vera.put('/api/admin/schedule/veronika', { week, buffer: 7 })).body.error, 'bad_buffer');
+
+    // Вихідний день майстра
+    const off = { ...week, [wd]: { on: false, open: 720, close: 960 } };
+    await admin.put('/api/admin/schedule/veronika', { week: off, buffer: 30, closedDates: [] });
+    assert.deepStrictEqual((await guest.get(`/api/slots?master=veronika&service=${haircut.id}&date=${tomorrow}`)).body.slots, []);
+    const m = (await guest.get('/api/meta')).body.masters.find((x) => x.id === 'veronika');
+    assert.strictEqual(m.days.find((d) => d.date === tomorrow).open, false);
+
+    // Відпустка на конкретну дату
+    const after = addDays(tomorrow, 1);
+    await admin.put('/api/admin/schedule/zoriana', { week: cur.week, buffer: 10, closedDates: [after] });
+    assert.deepStrictEqual((await guest.get(`/api/slots?master=zoriana&service=${haircut.id}&date=${after}`)).body.slots, []);
   });
 
   server.close();

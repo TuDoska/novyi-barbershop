@@ -121,12 +121,21 @@ $('#masters-grid').addEventListener('click', (e) => {
   $('#services').scrollIntoView({ behavior: 'smooth' });
 });
 
-function hoursText(h) {
-  const days = [...h.days].sort();
-  const t = `${hhmm(h.open)}–${hhmm(h.close)}`;
-  if (days.length === 7) return `Щодня ${t}`;
+// Графік салону з графіків майстрів: «Щодня 10:00–20:00» або «Пн–Пт 10:00–20:00 · Сб 12:00–18:00»
+function hoursText(week) {
   const names = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-  return `${[1, 2, 3, 4, 5, 6, 0].filter((d) => days.includes(d)).map((d) => names[d]).join(', ')} · ${t}`;
+  const order = [1, 2, 3, 4, 5, 6, 0].map((d) => week.find((w) => w.day === d));
+  const groups = [];
+  order.forEach((w) => {
+    const key = w.off ? 'off' : `${hhmm(w.open)}–${hhmm(w.close)}`;
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) last.days.push(w.day); else groups.push({ key, days: [w.day] });
+  });
+  const work = groups.filter((g) => g.key !== 'off');
+  if (!work.length) return 'За попереднім записом';
+  if (work.length === 1 && work[0].days.length === 7) return `Щодня ${work[0].key}`;
+  const label = (d) => (d.length > 2 ? `${names[d[0]]}–${names[d[d.length - 1]]}` : d.map((x) => names[x]).join(', '));
+  return work.map((g) => `${label(g.days)} ${g.key}`).join(' · ');
 }
 
 /* ---------- Поява при скролі ---------- */
@@ -154,7 +163,7 @@ setTimeout(() => document.body.classList.add('is-loaded'), 30);
   }
   SERVICES = meta.services;
   MASTERS = meta.masters;
-  $('#hours-text').textContent = hoursText(meta.hours);
+  $('#hours-text').textContent = hoursText(meta.week);
   const mc = $('#masters-count');
   if (mc) mc.textContent = MASTERS.length;
   renderCats();

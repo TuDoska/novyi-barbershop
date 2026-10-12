@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=4">
+  <link rel="stylesheet" href="/css/style.css?v=5">
 </head>
 <body class="is-loaded app">
   <div class="grain" aria-hidden="true"></div>
@@ -49,7 +49,7 @@
       <button data-tab="clients" data-admin>Клієнти</button>
       <button data-tab="services" data-admin>Послуги</button>
       <button data-tab="masters" data-admin>Майстри</button>
-      <button data-tab="hours" data-admin>Графік</button>
+      <button data-tab="hours" id="hours-tab">Графік</button>
     </nav>
 
     <section data-pane="bookings">
@@ -120,21 +120,37 @@
     </section>
 
     <section data-pane="hours" hidden>
-      <form class="panel" id="hours-form" style="max-width:760px" novalidate>
-        <h2 class="panel__title">Графік роботи<small>Онлайн-запис показує лише цей час</small></h2>
+      <div class="toolbar" data-admin>
+        <span class="label">Майстер</span>
+        <div class="chip-group" id="sched-masters"></div>
+      </div>
+      <form class="panel panel--gold" id="sched-form" novalidate>
+        <h2 class="panel__title" id="sched-title">Графік майстра<small>Онлайн-запис показує лише робочі години майстра</small></h2>
         <div class="form">
-          <div class="grid-3">
-            <label class="field"><span>Відкриття</span><input class="input" type="time" name="open" step="900"></label>
-            <label class="field"><span>Закриття</span><input class="input" type="time" name="close" step="900"></label>
-            <label class="field"><span>Крок запису</span><select class="input" name="step">
-              <option value="15">15 хв</option><option value="20">20 хв</option><option value="30">30 хв</option><option value="60">60 хв</option></select></label>
+          <div class="week" id="week"></div>
+          <div class="grid-2">
+            <label class="field"><span>Перерва між клієнтами</span><select class="input" name="buffer" id="buffer"></select>
+              <span class="field__hint">Час на прибирання й підготовку після кожного запису</span></label>
+            <div class="field"><span>Вихідні дати (відпустка, лікарняний)</span>
+              <div class="toolbar" style="margin:0"><input class="input" type="date" id="m-closed-date"><button type="button" class="btn btn--line btn--small" id="m-add-closed">Додати</button></div>
+              <div class="chip-group" id="m-closed-list"></div></div>
           </div>
-          <div class="field"><span>Робочі дні</span><div class="days-pick" id="days-pick"></div></div>
-          <div class="field"><span>Вихідні дати (свята, відпустка)</span>
+          <div id="sched-conflicts"></div>
+          <p class="field__err" data-err></p>
+          <button class="btn btn--gold" style="justify-self:start">Зберегти графік</button>
+        </div>
+      </form>
+
+      <form class="panel" id="salon-form" data-admin style="margin-top:20px;max-width:760px" novalidate>
+        <h2 class="panel__title">Загальне для барбершопу<small>Діє для всіх майстрів</small></h2>
+        <div class="form">
+          <label class="field" style="max-width:240px"><span>Крок запису</span><select class="input" name="step">
+            <option value="15">кожні 15 хв</option><option value="20">кожні 20 хв</option><option value="30">кожні 30 хв</option><option value="60">кожну годину</option></select></label>
+          <div class="field"><span>Барбершоп зачинено (свята)</span>
             <div class="toolbar" style="margin:0"><input class="input" type="date" id="closed-date"><button type="button" class="btn btn--line btn--small" id="add-closed">Додати</button></div>
             <div class="chip-group" id="closed-list"></div></div>
           <p class="field__err" data-err></p>
-          <button class="btn btn--gold" style="justify-self:start">Зберегти графік</button>
+          <button class="btn btn--line" style="justify-self:start">Зберегти</button>
         </div>
       </form>
     </section>
@@ -149,7 +165,7 @@
     <p>© <span id="year"></span> NOVYI_ BARBERSHOP · Стрий · <a href="tel:+380739012596">+380 73 901 25 96</a></p>
     <a href="/">На головну</a>
   </footer>
-  <script src="/js/api.js?v=4"></script>
-  <script src="/js/admin.js?v=4"></script>
+  <script src="/js/api.js?v=5"></script>
+  <script src="/js/admin.js?v=5"></script>
 </body>
 </html>

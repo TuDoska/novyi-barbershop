@@ -88,6 +88,57 @@ router.post('/bookings', ah(async (req, res) => {
   res.status(201).json({ booking: staffBooking(booking) });
 }));
 
+/* ---------- Графік майстра: адмін — будь-якого, майстер — лише свій ---------- */
+const canEditMaster = (req, id) => isAdmin(req) || req.user.masterId === id;
+
+router.get('/schedule/:id', ah(async (req, res) => {
+  const id = String(req.params.id);
+  if (!canEditMaster(req, id)) return res.status(403).json({ error: 'forbidden' });
+  const m = B.withSchedule(await db.masters.findOne({ _id: id }));
+  if (!m) return res.status(404).json({ error: 'not_found' });
+  res.json({ schedule: { masterId: m._id, name: m.name, week: m.schedule, closedDates: m.closedDates, buffer: m.buffer }, buffers: B.BUFFERS });
+}));
+
+function parseWeek(week) {
+  if (!week || typeof week !== 'object') throw new Error('bad_schedule');
+  const out = {};
+  for (let d = 0; d <= 6; d++) {
+    const x = week[d] ?? week[String(d)];
+    if (!x || typeof x !== 'object') throw new Error('bad_schedule');
+    const on = x.on === true;
+    const open = Number(x.open);
+    const close = Number(x.close);
+    if (!Number.isInteger(open) || !Number.isInteger(close) || open < 0 || close > 1440 || open % 5 || close % 5) throw new Error('bad_hours');
+    if (on && open >= close) throw new Error('bad_hours');
+    out[d] = { on, open, close };
+  }
+  return out;
+}
+
+router.put('/schedule/:id', ah(async (req, res) => {
+  const id = String(req.params.id);
+  if (!canEditMaster(req, id)) return res.status(403).json({ error: 'forbidden' });
+  const m = await db.masters.findOne({ _id: id });
+  if (!m) return res.status(404).json({ error: 'not_found' });
+  let schedule;
+  try { schedule = parseWeek(req.body?.week); } catch (e) { return res.status(400).json({ error: e.message }); }
+  const buffer = Number(req.body?.buffer);
+  if (!B.BUFFERS.includes(buffer)) return res.status(400).json({ error: 'bad_buffer' });
+  const closedDates = Array.isArray(req.body?.closedDates) ? [...new Set(req.body.closedDates.filter(isDate))].sort().slice(0, 100) : [];
+  await db.masters.update({ _id: id }, { schedule, buffer, closedDates });
+
+  // Попередження: активні майбутні записи, що тепер поза графіком майстра
+  const updated = { ...m, schedule, buffer, closedDates };
+  const s = await B.salon();
+  const today = kyivNow().date;
+  const conflicts = (await db.bookings.find({ masterId: id }))
+    .filter((b) => B.ACTIVE.includes(b.status) && b.date >= today)
+    .filter((b) => { const h = B.dayHours(updated, s, b.date); return !h || b.start < h.open || b.end > h.close; })
+    .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start)
+    .map(staffBooking);
+  res.json({ schedule: { masterId: id, week: schedule, closedDates, buffer }, conflicts });
+}));
+
 /* ---------- Далі — лише адмін ---------- */
 router.use(requireAdmin);
 
@@ -239,7 +290,7 @@ function masterFields(body) {
 router.get('/masters', ah(async (req, res) => res.json({ masters: await db.masters.find({}, { sort: { order: 1 } }) })));
 router.post('/masters', ah(async (req, res) => {
   let f; try { f = masterFields(req.body); } catch (e) { return sendErr(res, e); }
-  res.status(201).json({ master: await db.masters.insert(f) });
+  res.status(201).json({ master: await db.masters.insert({ ...f, schedule: B.defaultSchedule(), buffer: B.DEFAULT_BUFFER, closedDates: [] }) });
 }));
 router.put('/masters/:id', ah(async (req, res) => {
   const m = await db.masters.findOne({ _id: String(req.params.id) });
@@ -249,20 +300,17 @@ router.put('/masters/:id', ah(async (req, res) => {
   res.json({ master: { ...m, ...f } });
 }));
 
-/* ---------- Графік ---------- */
-router.get('/hours', ah(async (req, res) => res.json({ hours: await B.hours() })));
-router.put('/hours', ah(async (req, res) => {
-  const open = Number(req.body?.open);
-  const close = Number(req.body?.close);
+/* ---------- Загальні налаштування салону (лише адмін) ---------- */
+router.get('/salon', ah(async (req, res) => {
+  const h = await B.salon();
+  res.json({ salon: { step: h.step, closedDates: h.closedDates || [] } });
+}));
+router.put('/salon', ah(async (req, res) => {
   const step = Number(req.body?.step);
-  const days = Array.isArray(req.body?.days) ? [...new Set(req.body.days.map(Number))].filter((d) => d >= 0 && d <= 6) : null;
-  const closedDates = Array.isArray(req.body?.closedDates) ? [...new Set(req.body.closedDates.filter(isDate))].slice(0, 100) : [];
-  if (!Number.isInteger(open) || !Number.isInteger(close) || open < 0 || close > 1440 || open >= close) return res.status(400).json({ error: 'bad_hours' });
   if (![15, 20, 30, 60].includes(step)) return res.status(400).json({ error: 'bad_step' });
-  if (!days) return res.status(400).json({ error: 'bad_days' });
-  const hours = { open, close, step, days, closedDates };
-  await db.settings.update({ _id: 'hours' }, hours);
-  res.json({ hours });
+  const closedDates = Array.isArray(req.body?.closedDates) ? [...new Set(req.body.closedDates.filter(isDate))].sort().slice(0, 100) : [];
+  await db.settings.update({ _id: 'hours' }, { step, closedDates });
+  res.json({ salon: { step, closedDates } });
 }));
 
 module.exports = router;

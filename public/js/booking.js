@@ -108,7 +108,7 @@ $('#pick-services').addEventListener('click', (e) => {
 
 /* ---------- 3. Дата й час ---------- */
 function renderDates() {
-  const days = META.days;
+  const days = state.master.days;
   if (!state.date || !days.some((d) => d.date === state.date && d.open)) state.date = days.find((d) => d.open)?.date || null;
   $('#dates').innerHTML = days.map((d, i) => {
     const dt = new Date(d.date + 'T00:00:00Z');

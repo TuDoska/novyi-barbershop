@@ -13,19 +13,20 @@ const publicService = (s) => ({
 });
 
 router.get('/meta', ah(async (req, res) => {
-  const [masters, services, h] = await Promise.all([
+  const [masters, services, s] = await Promise.all([
     db.masters.find({ active: true }, { sort: { order: 1 } }),
     db.services.find({ active: true }, { sort: { order: 1 } }),
-    B.hours(),
+    B.salon(),
   ]);
-  const today = kyivNow().date;
-  const days = Array.from({ length: B.MAX_DAYS_AHEAD + 1 }, (_, i) => addDays(today, i))
-    .map((date) => ({ date, open: B.isOpen(h, date) }));
+  // Години салону для сайту: від найранішого відкриття до найпізнішого закриття серед майстрів
+  const week = [0, 1, 2, 3, 4, 5, 6].map((d) => {
+    const on = masters.map((m) => B.withSchedule(m).schedule[d]).filter((x) => x && x.on);
+    return on.length ? { day: d, open: Math.min(...on.map((x) => x.open)), close: Math.max(...on.map((x) => x.close)) } : { day: d, off: true };
+  });
   res.json({
-    masters: masters.map(publicMaster),
+    masters: masters.map((m) => ({ ...publicMaster(m), days: B.masterDays(m, s) })),
     services: services.map(publicService),
-    hours: { open: h.open, close: h.close, days: h.days },
-    days,
+    week,
   });
 }));
 

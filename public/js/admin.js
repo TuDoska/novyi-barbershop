@@ -94,7 +94,7 @@ let BOOKINGS = [];
 async function loadBookings() {
   const [from, to] = rangeDates();
   const q = new URLSearchParams({ from, to });
-  if ($('#f-master').value) q.set('master', $('#f-master').value);
+  if ($('#f-master')?.value) q.set('master', $('#f-master').value);
   if ($('#f-status').value) q.set('status', $('#f-status').value);
   const r = await api('GET', '/admin/bookings?' + q);
   if (r.error) { $('#blist').innerHTML = `<div class="empty">${esc(errText(r.error))}</div>`; return; }
@@ -413,53 +413,117 @@ $('#add-staff').addEventListener('click', () => {
 
 function fillMasterFilter() {
   const sel = $('#f-master');
+  if (!sel) return;
   const v = sel.value;
   sel.innerHTML = '<option value="">Усі майстри</option>' + MASTERS.map((m) => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('');
   sel.value = v;
 }
 
 /* =========================================================
-   Графік
+   Графік: кожен майстер — свої дні та години, перерва, відпустка
    ========================================================= */
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+const DAYFULL = ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', 'Пʼятниця', 'Субота'];
+let schedMaster = null;
+let M_CLOSED = [];
 let CLOSED = [];
-async function loadHours() {
-  const r = await api('GET', '/admin/hours');
-  if (r.error) return;
-  const h = r.hours;
-  const f = $('#hours-form');
-  f.open.value = hhmm(h.open);
-  f.close.value = hhmm(h.close);
-  f.step.value = String(h.step);
-  $('#days-pick').innerHTML = [1, 2, 3, 4, 5, 6, 0].map((d) => `<label><input type="checkbox" value="${d}" ${h.days.includes(d) ? 'checked' : ''}><span>${DAYNAMES[d]}</span></label>`).join('');
-  CLOSED = [...(h.closedDates || [])].sort();
-  renderClosed();
-}
-loaders.hours = loadHours;
 
-function renderClosed() {
-  $('#closed-list').innerHTML = CLOSED.length
-    ? CLOSED.map((d) => `<button type="button" data-unclose="${d}">${fmtDate(d)} ×</button>`).join('')
+function renderChips(box, list, attr) {
+  box.innerHTML = list.length
+    ? list.map((d) => `<button type="button" ${attr}="${d}">${fmtDate(d)} ×</button>`).join('')
     : '<span class="field__hint">Немає</span>';
+}
+
+async function loadSchedule() {
+  if (isAdmin()) {
+    if (!schedMaster) schedMaster = MASTERS[0]?.id;
+    $('#sched-masters').innerHTML = MASTERS.map((m) => `<button type="button" data-sm="${esc(m.id)}" class="${m.id === schedMaster ? 'is-active' : ''}">${esc(m.name)}</button>`).join('');
+    loadSalon();
+  } else {
+    schedMaster = ME.masterId;
+  }
+  if (!schedMaster) { $('#sched-form').innerHTML = '<div class="empty">Акаунт не привʼязаний до майстра</div>'; return; }
+  const r = await api('GET', '/admin/schedule/' + encodeURIComponent(schedMaster));
+  if (r.error) return toast(errText(r.error), 'is-error');
+  const sc = r.schedule;
+  $('#sched-title').innerHTML = `Графік · ${esc(sc.name)}<small>Онлайн-запис показує лише ці дні й години</small>`;
+  $('#week').innerHTML = WEEK_ORDER.map((d) => {
+    const x = sc.week[d] || { on: false, open: 600, close: 1200 };
+    return `<div class="week__row ${x.on ? '' : 'is-off'}" data-day="${d}">
+      <label class="switch"><input type="checkbox" ${x.on ? 'checked' : ''} data-on><span></span></label>
+      <b class="week__day">${DAYFULL[d]}</b>
+      <input class="input" type="time" step="300" value="${hhmm(x.open)}" data-open aria-label="${DAYFULL[d]}: початок">
+      <span class="week__dash">—</span>
+      <input class="input" type="time" step="300" value="${hhmm(x.close)}" data-close aria-label="${DAYFULL[d]}: кінець">
+      <span class="week__off">Вихідний</span>
+    </div>`;
+  }).join('');
+  $('#buffer').innerHTML = r.buffers.map((b) => `<option value="${b}" ${b === sc.buffer ? 'selected' : ''}>${b ? b + ' хв' : 'без перерви'}</option>`).join('');
+  M_CLOSED = [...sc.closedDates];
+  renderChips($('#m-closed-list'), M_CLOSED, 'data-m-unclose');
+  $('#sched-conflicts').innerHTML = '';
+  $('[data-err]', $('#sched-form')).textContent = '';
+}
+loaders.hours = loadSchedule;
+
+document.addEventListener('click', (e) => {
+  const sm = e.target.closest('[data-sm]');
+  if (sm) { schedMaster = sm.dataset.sm; loadSchedule(); }
+  const u = e.target.closest('[data-m-unclose]');
+  if (u) { M_CLOSED = M_CLOSED.filter((d) => d !== u.dataset.mUnclose); renderChips($('#m-closed-list'), M_CLOSED, 'data-m-unclose'); }
+  const c = e.target.closest('[data-unclose]');
+  if (c) { CLOSED = CLOSED.filter((d) => d !== c.dataset.unclose); renderChips($('#closed-list'), CLOSED, 'data-unclose'); }
+});
+$('#week').addEventListener('change', (e) => {
+  const row = e.target.closest('.week__row');
+  if (e.target.matches('[data-on]')) row.classList.toggle('is-off', !e.target.checked);
+});
+$('#m-add-closed').addEventListener('click', () => {
+  const v = $('#m-closed-date').value;
+  if (v && !M_CLOSED.includes(v)) { M_CLOSED.push(v); M_CLOSED.sort(); renderChips($('#m-closed-list'), M_CLOSED, 'data-m-unclose'); }
+});
+
+$('#sched-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const err = $('[data-err]', f);
+  const week = {};
+  for (const row of $$('.week__row', f)) {
+    const on = $('[data-on]', row).checked;
+    const open = toMin($('[data-open]', row).value || '00:00');
+    const close = toMin($('[data-close]', row).value || '00:00');
+    if (on && open >= close) { err.textContent = `${DAYFULL[row.dataset.day]}: кінець має бути пізніше за початок`; return; }
+    week[row.dataset.day] = { on, open, close };
+  }
+  const r = await api('PUT', '/admin/schedule/' + encodeURIComponent(schedMaster), { week, buffer: Number(f.buffer.value), closedDates: M_CLOSED });
+  if (r.error) { err.textContent = errText(r.error); return; }
+  err.textContent = '';
+  toast('Графік збережено');
+  // Записи, які тепер поза графіком — щоб ніхто з клієнтів не загубився
+  $('#sched-conflicts').innerHTML = r.conflicts.length ? `<div class="notice">
+      <b>Увага: ${r.conflicts.length} ${plural(r.conflicts.length, 'запис', 'записи', 'записів')} тепер поза графіком</b>
+      <p>Вони не скасовані автоматично. Звʼяжіться з клієнтами, щоб перенести або скасувати.</p>
+      <ul>${r.conflicts.map((b) => `<li>${fmtDate(b.date)}, ${b.time} — ${esc(b.clientName)}, <a class="textlink" href="tel:${esc(b.clientPhone)}">${esc(fmtPhone(b.clientPhone))}</a> · ${esc(b.serviceName)}</li>`).join('')}</ul>
+    </div>` : '';
+});
+
+/* ---------- Загальне для барбершопу ---------- */
+async function loadSalon() {
+  const r = await api('GET', '/admin/salon');
+  if (r.error) return;
+  $('#salon-form').step.value = String(r.salon.step);
+  CLOSED = [...r.salon.closedDates];
+  renderChips($('#closed-list'), CLOSED, 'data-unclose');
 }
 $('#add-closed').addEventListener('click', () => {
   const v = $('#closed-date').value;
-  if (v && !CLOSED.includes(v)) { CLOSED.push(v); CLOSED.sort(); renderClosed(); }
+  if (v && !CLOSED.includes(v)) { CLOSED.push(v); CLOSED.sort(); renderChips($('#closed-list'), CLOSED, 'data-unclose'); }
 });
-$('#closed-list').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-unclose]');
-  if (b) { CLOSED = CLOSED.filter((d) => d !== b.dataset.unclose); renderClosed(); }
-});
-$('#hours-form').addEventListener('submit', async (e) => {
+$('#salon-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const f = e.target;
-  const body = {
-    open: toMin(f.open.value), close: toMin(f.close.value), step: Number(f.step.value),
-    days: $$('#days-pick input:checked').map((i) => Number(i.value)), closedDates: CLOSED,
-  };
-  const r = await api('PUT', '/admin/hours', body);
-  if (r.error) { $('[data-err]', f).textContent = errText(r.error); return; }
-  $('[data-err]', f).textContent = '';
-  toast('Графік збережено');
+  const r = await api('PUT', '/admin/salon', { step: Number(e.target.step.value), closedDates: CLOSED });
+  if (r.error) { $('[data-err]', e.target).textContent = errText(r.error); return; }
+  toast('Збережено');
 });
 
 /* ---------- Старт ---------- */
@@ -469,7 +533,11 @@ $('#hours-form').addEventListener('submit', async (e) => {
   if (!['admin', 'master'].includes(me.role)) { location.replace('/account'); return; }
   ROLE = me.role;
   $('#role-label').textContent = isAdmin() ? 'Панель адміністратора' : `Панель майстра · ${me.name}`;
-  if (!isAdmin()) $$('[data-admin]').forEach((el) => el.remove());
+  if (!isAdmin()) {
+    $$('[data-admin]').forEach((el) => el.remove());
+    $('#hours-tab').textContent = 'Мій графік';
+    TITLES.hours = 'Мій графік';
+  }
 
   // Майстри й послуги для форм (публічні дані; адміну — повні)
   if (isAdmin()) {
@@ -480,5 +548,5 @@ $('#hours-form').addEventListener('submit', async (e) => {
     SERVICES = (meta.services || []).map((s) => ({ ...s, _id: s.id, active: true }));
   }
   const tab = location.hash.slice(1);
-  showTab(isAdmin() && TITLES[tab] ? tab : 'bookings');
+  showTab(TITLES[tab] && (isAdmin() || ['bookings', 'hours'].includes(tab)) ? tab : 'bookings');
 })();
