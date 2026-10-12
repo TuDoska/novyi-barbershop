@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Панель — NOVYI_ BARBERSHOP</title>
+  <meta name="description" content="Панель керування NOVYI_ BARBERSHOP.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0b0b0a">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css?v=4">
+</head>
+<body class="is-loaded app">
+  <div class="grain" aria-hidden="true"></div>
+  <header class="header" id="header">
+    <a href="/" class="brand" aria-label="NOVYI_ BARBERSHOP — на головну">
+      <span class="brand__mark">N</span>
+      <span class="brand__name">NOVYI<i>_</i></span>
+    </a>
+    <nav class="nav" aria-label="Головне меню">
+      <a href="/#services">Послуги</a>
+      <a href="/#masters">Майстри</a>
+      <a href="/booking">Запис</a>
+      <a href="/#contact">Контакти</a>
+    </nav>
+    <a class="header__account" href="/login"><span class="header__account-name">Увійти</span></a>
+    <button class="burger" aria-label="Меню" aria-expanded="false"><span></span><span></span></button>
+  </header>
+
+  <main class="page">
+    <div class="admin-top">
+      <div class="page__head" style="margin:0">
+        <p class="eyebrow" id="role-label">Панель</p>
+        <h1 class="title" id="admin-title">Записи</h1>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn--gold" id="new-booking">+ Запис</button>
+        <a class="btn btn--line" href="/account">Мій кабінет</a>
+        <button class="btn btn--line" data-logout>Вийти</button>
+      </div>
+    </div>
+
+    <nav class="tabs" id="admin-tabs" role="tablist">
+      <button data-tab="bookings" class="is-active">Записи<span class="count" id="pending-count" hidden></span></button>
+      <button data-tab="earnings" data-admin>Заробіток</button>
+      <button data-tab="clients" data-admin>Клієнти</button>
+      <button data-tab="services" data-admin>Послуги</button>
+      <button data-tab="masters" data-admin>Майстри</button>
+      <button data-tab="hours" data-admin>Графік</button>
+    </nav>
+
+    <section data-pane="bookings">
+      <div class="toolbar">
+        <div class="chip-group" id="range-chips">
+          <button data-range="today" class="is-active">Сьогодні</button>
+          <button data-range="tomorrow">Завтра</button>
+          <button data-range="week">7 днів</button>
+          <button data-range="past">Минулі 7 днів</button>
+        </div>
+        <input class="input" type="date" id="pick-date" aria-label="Дата">
+        <select class="input" id="f-master" data-admin aria-label="Майстер"><option value="">Усі майстри</option></select>
+        <select class="input" id="f-status" aria-label="Статус">
+          <option value="">Усі статуси</option><option value="pending">Очікує</option><option value="confirmed">Підтверджено</option>
+          <option value="done">Виконано</option><option value="noshow">Не прийшов</option><option value="cancelled">Скасовано</option>
+        </select>
+      </div>
+      <div class="blist" id="blist"><div class="skeleton"></div></div>
+    </section>
+
+    <section data-pane="earnings" hidden>
+      <div class="toolbar">
+        <div class="chip-group" id="earn-chips">
+          <button data-days="7">7 днів</button>
+          <button data-days="30" class="is-active">30 днів</button>
+          <button data-days="90">90 днів</button>
+          <button data-days="month">Цей місяць</button>
+        </div>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="dash">
+        <section class="panel span-8">
+          <h2 class="panel__title">Дохід по днях<small id="chart-sub"></small></h2>
+          <div class="chart" id="chart"></div>
+          <div class="chart-axis" id="chart-axis"></div>
+        </section>
+        <section class="panel span-4">
+          <h2 class="panel__title">По майстрах</h2>
+          <div class="bars" id="by-master"></div>
+        </section>
+        <section class="panel">
+          <h2 class="panel__title">По послугах</h2>
+          <div class="table-wrap"><table class="table" id="by-service"></table></div>
+        </section>
+      </div>
+    </section>
+
+    <section data-pane="clients" hidden>
+      <div class="toolbar"><input class="input" id="client-q" placeholder="Пошук: імʼя або телефон" style="min-width:280px"></div>
+      <div class="panel"><div class="table-wrap"><table class="table" id="clients"></table></div></div>
+    </section>
+
+    <section data-pane="services" hidden>
+      <div class="toolbar"><button class="btn btn--line btn--small" id="add-service">+ Послуга</button></div>
+      <div class="panel"><div class="table-wrap"><table class="table" id="services"></table></div></div>
+    </section>
+
+    <section data-pane="masters" hidden>
+      <div class="toolbar">
+        <button class="btn btn--line btn--small" id="add-master">+ Майстер</button>
+        <button class="btn btn--line btn--small" id="add-staff">+ Акаунт для майстра</button>
+      </div>
+      <div class="panel"><div class="table-wrap"><table class="table" id="masters"></table></div></div>
+      <div class="panel" style="margin-top:20px">
+        <h2 class="panel__title">Акаунти персоналу<small>Майстер бачить і змінює лише свої записи. Заробіток бачить тільки адмін.</small></h2>
+        <div class="table-wrap"><table class="table" id="staff"></table></div>
+      </div>
+    </section>
+
+    <section data-pane="hours" hidden>
+      <form class="panel" id="hours-form" style="max-width:760px" novalidate>
+        <h2 class="panel__title">Графік роботи<small>Онлайн-запис показує лише цей час</small></h2>
+        <div class="form">
+          <div class="grid-3">
+            <label class="field"><span>Відкриття</span><input class="input" type="time" name="open" step="900"></label>
+            <label class="field"><span>Закриття</span><input class="input" type="time" name="close" step="900"></label>
+            <label class="field"><span>Крок запису</span><select class="input" name="step">
+              <option value="15">15 хв</option><option value="20">20 хв</option><option value="30">30 хв</option><option value="60">60 хв</option></select></label>
+          </div>
+          <div class="field"><span>Робочі дні</span><div class="days-pick" id="days-pick"></div></div>
+          <div class="field"><span>Вихідні дати (свята, відпустка)</span>
+            <div class="toolbar" style="margin:0"><input class="input" type="date" id="closed-date"><button type="button" class="btn btn--line btn--small" id="add-closed">Додати</button></div>
+            <div class="chip-group" id="closed-list"></div></div>
+          <p class="field__err" data-err></p>
+          <button class="btn btn--gold" style="justify-self:start">Зберегти графік</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <div class="modal" id="modal" hidden role="dialog" aria-modal="true">
+    <div class="panel panel--gold"><button class="modal__close" data-close aria-label="Закрити">×</button><div id="modal-body"></div></div>
+  </div>
+
+  <footer class="footer">
+    <span class="brand__name">NOVYI<i>_</i></span>
+    <p>© <span id="year"></span> NOVYI_ BARBERSHOP · Стрий · <a href="tel:+380739012596">+380 73 901 25 96</a></p>
+    <a href="/">На головну</a>
+  </footer>
+  <script src="/js/api.js?v=4"></script>
+  <script src="/js/admin.js?v=4"></script>
+</body>
+</html>

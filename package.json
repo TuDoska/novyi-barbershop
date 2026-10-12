@@ -1,0 +1,27 @@
+{
+  "name": "novyi-barbershop",
+  "version": "1.0.0",
+  "description": "NOVYI_ BARBERSHOP — сайт барбершопу з онлайн-записом, кабінетом клієнта та адмінкою",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node test/api.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@seald-io/nedb": "^4.1.2",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.22.3",
+    "express-rate-limit": "^7.5.1",
+    "helmet": "^7.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^6.21.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

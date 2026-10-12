@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Кабінет — NOVYI_ BARBERSHOP</title>
+  <meta name="description" content="Кабінет клієнта NOVYI_ BARBERSHOP.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0b0b0a">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css?v=4">
+</head>
+<body class="is-loaded app">
+  <div class="grain" aria-hidden="true"></div>
+  <header class="header" id="header">
+    <a href="/" class="brand" aria-label="NOVYI_ BARBERSHOP — на головну">
+      <span class="brand__mark">N</span>
+      <span class="brand__name">NOVYI<i>_</i></span>
+    </a>
+    <nav class="nav" aria-label="Головне меню">
+      <a href="/#services">Послуги</a>
+      <a href="/#masters">Майстри</a>
+      <a href="/booking">Запис</a>
+      <a href="/#contact">Контакти</a>
+    </nav>
+    <a class="header__account" href="/login"><span class="header__account-name">Увійти</span></a>
+    <button class="burger" aria-label="Меню" aria-expanded="false"><span></span><span></span></button>
+  </header>
+
+  <main class="page">
+    <div class="admin-top">
+      <div class="page__head" style="margin:0">
+        <p class="eyebrow">Кабінет</p>
+        <h1 class="title" id="hello">Вітаємо</h1>
+      </div>
+      <div class="btn-row">
+        <a class="btn btn--gold" href="/booking">Новий запис</a>
+        <button class="btn btn--line" data-logout>Вийти</button>
+      </div>
+    </div>
+
+    <div class="dash" id="dash">
+      <section class="panel panel--gold span-8" id="timer-box"><div class="skeleton"></div></section>
+      <section class="panel span-4">
+        <div class="stat"><b id="visits">—</b><span>візитів до NOVYI_</span></div>
+        <div class="stat" style="margin-top:28px"><b id="spent" style="font-size:34px">—</b><span>загалом</span></div>
+      </section>
+
+      <section class="panel span-6">
+        <h2 class="panel__title">Найближчі записи</h2>
+        <div id="upcoming"><div class="skeleton"></div></div>
+      </section>
+      <section class="panel span-6">
+        <h2 class="panel__title">Історія візитів</h2>
+        <div id="history"><div class="skeleton"></div></div>
+      </section>
+
+      <section>
+        <h2 class="panel__title" style="margin-top:30px">Налаштування</h2>
+        <div class="settings-grid">
+          <form class="panel" id="f-name" novalidate>
+            <h3 class="panel__title">Імʼя<small>Змінювати можна раз на добу</small></h3>
+            <div class="form">
+              <label class="field"><span>Нове імʼя</span><input class="input" name="name" maxlength="40" autocomplete="name"></label>
+              <p class="lock-note" data-lock></p>
+              <p class="field__err" data-err></p>
+            </div>
+            <button class="btn btn--line btn--block">Зберегти імʼя</button>
+          </form>
+          <form class="panel" id="f-phone" novalidate>
+            <h3 class="panel__title">Телефон<small>Це ваш логін. Раз на добу, з поточним паролем</small></h3>
+            <div class="form">
+              <label class="field"><span>Новий номер</span><input class="input" name="phone" type="tel" autocomplete="tel" placeholder="067 123 45 67"></label>
+              <label class="field"><span>Поточний пароль</span><input class="input" name="password" type="password" autocomplete="current-password"></label>
+              <p class="lock-note" data-lock></p>
+              <p class="field__err" data-err></p>
+            </div>
+            <button class="btn btn--line btn--block">Змінити телефон</button>
+          </form>
+          <form class="panel" id="f-pass" novalidate>
+            <h3 class="panel__title">Пароль<small>Після зміни інші пристрої вийдуть з акаунта</small></h3>
+            <div class="form">
+              <label class="field"><span>Новий пароль</span><input class="input" name="password" type="password" autocomplete="new-password" minlength="8"></label>
+              <label class="field"><span>Повторіть пароль</span><input class="input" name="repeat" type="password" autocomplete="new-password" minlength="8"></label>
+              <p class="field__err" data-err></p>
+            </div>
+            <button class="btn btn--line btn--block">Змінити пароль</button>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <span class="brand__name">NOVYI<i>_</i></span>
+    <p>© <span id="year"></span> NOVYI_ BARBERSHOP · Стрий · <a href="tel:+380739012596">+380 73 901 25 96</a></p>
+    <a href="/">На головну</a>
+  </footer>
+  <script src="/js/api.js?v=4"></script>
+  <script src="/js/account.js?v=4"></script>
+</body>
+</html>

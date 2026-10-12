@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Онлайн-запис — NOVYI_ BARBERSHOP</title>
+  <meta name="description" content="Онлайн-запис до NOVYI_ BARBERSHOP у Стрию: оберіть майстра, послугу та вільний час.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0b0b0a">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css?v=4">
+</head>
+<body class="is-loaded app">
+  <div class="grain" aria-hidden="true"></div>
+  <header class="header" id="header">
+    <a href="/" class="brand" aria-label="NOVYI_ BARBERSHOP — на головну">
+      <span class="brand__mark">N</span>
+      <span class="brand__name">NOVYI<i>_</i></span>
+    </a>
+    <nav class="nav" aria-label="Головне меню">
+      <a href="/#services">Послуги</a>
+      <a href="/#masters">Майстри</a>
+      <a href="/booking" class="is-active">Запис</a>
+      <a href="/#contact">Контакти</a>
+    </nav>
+    <a class="header__account" href="/login"><span class="header__account-name">Увійти</span></a>
+    <button class="burger" aria-label="Меню" aria-expanded="false"><span></span><span></span></button>
+  </header>
+
+  <main class="page">
+    <div class="page__head">
+      <p class="eyebrow">Онлайн-запис · 24/7</p>
+      <h1 class="title">Ваш час <em>у NOVYI_</em></h1>
+      <p class="muted">Чотири кроки — і місце у кріслі за вами. Підтвердження бачите одразу в кабінеті.</p>
+    </div>
+
+    <div class="wizard" id="wizard">
+      <div>
+        <ol class="stepper" id="stepper">
+          <li data-step="1"><span>I</span>Майстер</li>
+          <li data-step="2"><span>II</span>Послуга</li>
+          <li data-step="3"><span>III</span>Дата й час</li>
+          <li data-step="4"><span>IV</span>Підтвердження</li>
+        </ol>
+
+        <section class="step" data-step="1">
+          <h2 class="step__title">Оберіть майстра</h2>
+          <p class="step__lead">Ціни залежать від рівня: Top barber або Prime barber.</p>
+          <div class="pick-masters" id="pick-masters"><div class="skeleton"></div></div>
+        </section>
+
+        <section class="step" data-step="2">
+          <button class="step__back" data-go="1">← Майстер</button>
+          <h2 class="step__title">Оберіть послугу</h2>
+          <p class="step__lead" id="services-lead"></p>
+          <div id="pick-services"></div>
+        </section>
+
+        <section class="step" data-step="3">
+          <button class="step__back" data-go="2">← Послуга</button>
+          <h2 class="step__title">Дата й час</h2>
+          <p class="step__lead">Показуємо лише вільний час з урахуванням тривалості послуги.</p>
+          <div class="dates" id="dates" role="listbox" aria-label="Дата"></div>
+          <div id="times"></div>
+        </section>
+
+        <section class="step" data-step="4">
+          <button class="step__back" data-go="3">← Дата й час</button>
+          <h2 class="step__title">Підтвердження</h2>
+          <div id="confirm-auth"></div>
+          <form class="form" id="confirm-form" hidden>
+            <p class="step__lead" id="confirm-who"></p>
+            <label class="field"><span>Коментар для майстра (необовʼязково)</span>
+              <textarea class="input" name="comment" maxlength="300" placeholder="Наприклад: хочу коротше на скронях"></textarea></label>
+            <label class="check"><input type="checkbox" name="agree" required> <span>Погоджуюсь на обробку імені й телефону для запису. Дані бачать лише барбершоп і майстри.</span></label>
+            <button class="btn btn--gold btn--block" type="submit">Записатися</button>
+          </form>
+        </section>
+
+        <section class="step" data-step="5">
+          <div class="success panel panel--gold">
+            <div class="success__mark"><svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="#e6d3a3" stroke-width="1.6"><path d="M8 18l6 6 12-14"/></svg></div>
+            <p class="eyebrow">Запис № <span id="ok-number"></span></p>
+            <h2 class="step__title">Чекаємо на вас</h2>
+            <p class="step__lead">Запис отримав статус «очікує підтвердження». Майстер підтвердить його найближчим часом.</p>
+            <div class="summary" id="ok-summary"></div>
+            <div class="btn-row" style="justify-content:center">
+              <a class="btn btn--gold" href="/account">До кабінету</a>
+              <a class="btn btn--line" href="/">На головну</a>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="summary panel panel--gold" id="summary" aria-live="polite">
+        <p class="eyebrow">Ваш запис</p>
+        <dl>
+          <div><dt>Майстер</dt><dd id="s-master" class="is-empty">—</dd></div>
+          <div><dt>Послуга</dt><dd id="s-service" class="is-empty">—</dd></div>
+          <div><dt>Тривалість</dt><dd id="s-duration" class="is-empty">—</dd></div>
+          <div><dt>Дата</dt><dd id="s-date" class="is-empty">—</dd></div>
+          <div><dt>Час</dt><dd id="s-time" class="is-empty">—</dd></div>
+        </dl>
+        <div class="summary__total"><span>До сплати</span><b id="s-total">—</b></div>
+        <p class="field__hint" style="margin-top:14px">Оплата на місці після візиту.</p>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <span class="brand__name">NOVYI<i>_</i></span>
+    <p>© <span id="year"></span> NOVYI_ BARBERSHOP · Стрий · <a href="tel:+380739012596">+380 73 901 25 96</a></p>
+    <a href="/">На головну</a>
+  </footer>
+  <script src="/js/api.js?v=4"></script>
+  <script src="/js/booking.js?v=4"></script>
+</body>
+</html>
